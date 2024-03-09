@@ -27,7 +27,6 @@ class Phone(Field):
         if (len(str(nums[0]))) == 10:
             super().__init__(num)
         else:
-            print('Wrong number!')
             self.value = None
          
     def __eq__(self, another_value: str) -> bool:
@@ -50,6 +49,7 @@ class Record:
     def add_phone(self, phone):
         if Phone(phone).value:
             self.phones.append(Phone(phone))
+            return True
     
     def remove_phone(self, phone):
         if phone in self.phones:
@@ -121,21 +121,36 @@ class AddressBook(UserDict):
         if name in AddressBook.data.keys():
             del AddressBook.data[name]
 
-def input_error():
-    pass
+def input_error(func):
+    def inner(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except ValueError:
+                return  "Value error! Please, enter again your command to add contact correctly."
+        except IndexError:
+            return "Index out of range! Please, enter again your command to show contact correctly."
+        except KeyError:
+            return "There is no such contact yet. Add it please."
+        except AttributeError:
+            return "Bad attributes!"
+    return inner
 
+@input_error
 def add_contact(args, book: AddressBook):
     name, phone, *_ = args
     record = book.find(name)
-    if record is None:
+    message = 'Nothing has changed!'
+    if record is None and Phone(phone) != None:
         record = Record(name)
         book.add_record(record)
-        message = "Contact added."
-    if phone:
         record.add_phone(phone)
-        message = "Contact updated."
+        message = "Contact added."
+    elif record and Phone(phone) != None:
+        record.add_phone(phone)
+        message = 'Contact updated'
     return message
 
+@input_error
 def add_birthday(args, book: AddressBook):
     name, birthday, *_ = args
     record = book.find(name)
@@ -147,6 +162,7 @@ def add_birthday(args, book: AddressBook):
     else:
         return 'Input birthday to add!'
 
+@input_error
 def show_birthday(args, book: AddressBook):
     name, *_ = args
     record = book.find(name)
@@ -154,12 +170,15 @@ def show_birthday(args, book: AddressBook):
         return('No such user in adress book!')
     return record.birthday
 
+@input_error
 def birthdays(book: AddressBook):
     return book.get_upcoming_birthdays()
 
+@input_error
 def show_all(book:AddressBook):
         return '\n'.join(str(i) for i in book.data.values())
 
+@input_error
 def show_phone(args, book:AddressBook):
     name, *_ = args
     record = book.find(name)
@@ -168,6 +187,7 @@ def show_phone(args, book:AddressBook):
     else:
         return ', '.join([str(i) for i in record.phones])
 
+@input_error
 def change_phone(args, book:AddressBook):
     name, old_phone, new_phone, *_ = args
     record = book.find(name)
